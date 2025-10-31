@@ -1,5 +1,5 @@
-from cnn.configs import CNNArchConfig, AugmentationConfig, RegularizationConfig
-from cnn.train_eval import evaluate_model
+from a2.cnn import CNNArchConfig, AugmentationConfig, RegularizationConfig
+from a2.cnn import evaluate_model
 import matplotlib.pyplot as plt
 
 # =============================
