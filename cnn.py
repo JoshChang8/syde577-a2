@@ -251,7 +251,6 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
 
     return running_loss / len(loader.dataset)
 
-
 @torch.no_grad()
 def evaluate(model, loader, criterion, device):
     """
@@ -278,36 +277,18 @@ def evaluate(model, loader, criterion, device):
     avg_acc = acc_metric.compute().item()
     return avg_loss, avg_acc
 
-
-# Final test accuracy
-@torch.no_grad()
-def test_accuracy(model, loader, device):
-    model.eval()
-    acc_metric = Accuracy(task="multiclass", num_classes=model.arch_cfg.num_classes).to(device)
-
-    for images, labels in loader:
-        images = images.to(device)
-        labels = labels.to(device)
-
-        logits = model(images)
-        preds = torch.argmax(logits, dim=1)
-        acc_metric.update(preds, labels)
-
-    return acc_metric.compute().item()
-
-
 def evaluate_model(arch_cfg, aug_cfg, reg_cfg, num_epochs=5, batch_size=64):
     """
     Trains a CNN with given architecture, augmentation, and regularization configs,
     and returns the validation accuracy after num_epochs.
     """
 
-    # Prepare data loaders
+    # 1️⃣ Prepare data loaders
     train_loader, val_loader, test_loader = getDataFromTorchVision(
         augmentation_config=aug_cfg, batch_size=batch_size
     )
 
-    # Initialize model, loss, optimizer
+    # 2️⃣ Initialize model, loss, optimizer
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ModularCNN(arch_cfg, reg_cfg).to(device)
 
@@ -318,7 +299,7 @@ def evaluate_model(arch_cfg, aug_cfg, reg_cfg, num_epochs=5, batch_size=64):
         weight_decay=reg_cfg.weight_decay
     )
 
-    # Training loop (with optional early stopping)
+    # 3️⃣ Training loop (with optional early stopping)
     best_val_acc = 0.0
     best_state = None
     epochs_no_improve = 0
@@ -339,20 +320,31 @@ def evaluate_model(arch_cfg, aug_cfg, reg_cfg, num_epochs=5, batch_size=64):
 
         # Early stopping check
         if reg_cfg.use_early_stopping and epochs_no_improve >= reg_cfg.patience:
-            print(f"Early stopping triggered at epoch {epoch+1}")
+            print(f"⏸️ Early stopping triggered at epoch {epoch+1}")
             break
 
-    # Restore best weights (if early stopping)
+    # 4️⃣ Restore best weights (if early stopping)
     if best_state is not None:
         model.load_state_dict(best_state)
 
-    # Return best validation accuracy
+    # 5️⃣ Return best validation accuracy
     return best_val_acc
 
+# Final test accuracy
+@torch.no_grad()
+def test_accuracy(model, loader, device):
+    model.eval()
+    acc_metric = Accuracy(task="multiclass", num_classes=model.arch_cfg.num_classes).to(device)
 
+    for images, labels in loader:
+        images = images.to(device)
+        labels = labels.to(device)
 
+        logits = model(images)
+        preds = torch.argmax(logits, dim=1)
+        acc_metric.update(preds, labels)
 
-
+    return acc_metric.compute().item()
 
 
 
